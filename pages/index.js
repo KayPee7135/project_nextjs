@@ -72,7 +72,7 @@ export default function Home() {
             Find Your Dream Internship or Hire Top Talent
           </h1>
           <p className="text-lg md:text-xl text-white mb-8 max-w-2xl drop-shadow-lg">
-            Join thousands of jobseekers and recruiters in one place. Whether you're looking for your next opportunity or searching for the perfect candidate, we've got you covered.
+            Join thousands of jobseekers and recruiters in one place. Whether you&apos;re looking for your next opportunity or searching for the perfect candidate, we&apos;ve got you covered.
           </p>
           <div className="flex gap-4">
             <Link href="/listed-jobs" className="px-6 py-3 rounded-lg bg-white text-blue-600 font-semibold text-lg shadow hover:bg-blue-50 transition">

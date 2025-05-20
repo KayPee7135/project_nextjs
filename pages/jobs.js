@@ -90,7 +90,7 @@ export default function JobsPage() {
             <div>Loading your jobs...</div>
           ) : jobs.length === 0 ? (
             <div className="text-center py-8">
-              <p className="text-gray-600 mb-4">You haven't posted any jobs yet.</p>
+              <p className="text-gray-600 mb-4">You haven&apos;t posted any jobs yet.</p>
               <button
                 onClick={() => router.push('/jobs/new')}
                 className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"

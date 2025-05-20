@@ -1,6 +1,6 @@
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import Layout from '../../components/Layout';
 import { toast } from 'react-toastify';
 
@@ -13,19 +13,7 @@ export default function JobManagement() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [processing, setProcessing] = useState(false);
 
-  useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/auth/signin');
-    } else if (session && !session.user.roles.includes('admin') && !session.user.roles.includes('superadmin')) {
-      router.push('/');
-    }
-  }, [session, status, router]);
-
-  useEffect(() => {
-    fetchJobs();
-  }, [searchQuery, statusFilter]);
-
-  const fetchJobs = async () => {
+  const fetchJobs = useCallback(async () => {
     try {
       setLoading(true);
       const response = await fetch(`/api/admin/jobs?search=${searchQuery}&status=${statusFilter}`);
@@ -38,7 +26,19 @@ export default function JobManagement() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [searchQuery, statusFilter]);
+
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push('/auth/signin');
+    } else if (session && !session.user.roles.includes('admin') && !session.user.roles.includes('superadmin')) {
+      router.push('/');
+    }
+  }, [session, status, router]);
+
+  useEffect(() => {
+    fetchJobs();
+  }, [fetchJobs]);
 
   const handleStatusChange = async (jobId, newStatus) => {
     try {
