@@ -1,8 +1,12 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
+  --background: #fff0f5;
   --foreground: #171717;
+  --accent: #ff6bcb;
+  --accent2: #6bffb8;
+  --accent3: #6bcaff;
+  --gradient: linear-gradient(135deg, #ff6bcb 0%, #6bffb8 50%, #6bcaff 100%);
 }
 
 @theme inline {
@@ -14,13 +18,49 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
+    --background: #1a1a2e;
     --foreground: #ededed;
+    --accent: #ff6bcb;
+    --accent2: #6bffb8;
+    --accent3: #6bcaff;
+    --gradient: linear-gradient(135deg, #ff6bcb 0%, #6bffb8 50%, #6bcaff 100%);
   }
 }
 
 body {
-  background: var(--background);
+  background: var(--gradient);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  min-height: 100vh;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: var(--accent);
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+}
+
+button, .btn, .primary-btn {
+  background: var(--gradient);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 0.75em 2em;
+  font-weight: bold;
+  box-shadow: 0 4px 14px 0 rgba(255,107,203,0.15);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+button:hover, .btn:hover, .primary-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 8px 24px 0 rgba(107,255,184,0.25);
+}
+
+input, select, textarea {
+  border: 2px solid var(--accent);
+  border-radius: 6px;
+  padding: 0.5em 1em;
+  outline: none;
+  transition: border 0.2s;
+}
+input:focus, select:focus, textarea:focus {
+  border-color: var(--accent2);
 }
