@@ -1,60 +1,50 @@
+import dbConnect from '../../../lib/mongodb';
+import User from '../../../models/User';
 import bcrypt from 'bcryptjs';
-import { connectToDatabase } from '../../../lib/mongodb';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
-    return res.status(405).json({ message: 'Method not allowed' });
+    return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
+    await dbConnect();
+
     const { name, email, password, role } = req.body;
 
-    if (!name || !email || !password || !role) {
-      return res.status(400).json({ message: 'Missing required fields' });
+    // Validate input
+    if (!name || !email || !password) {
+      return res.status(400).json({ error: 'Please fill in all fields' });
     }
-
-    // Prevent admin role creation through signup
-    if (role === 'admin' || role === 'superadmin') {
-      return res.status(403).json({ message: 'Invalid role selection' });
-    }
-
-    const { db } = await connectToDatabase();
 
     // Check if user already exists
-    const existingUser = await db.collection('users').findOne({ email });
+    const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(400).json({ message: 'User already exists' });
+      return res.status(400).json({ error: 'User already exists' });
     }
 
     // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(password, 12);
 
-    // Create user with role array for future role expansion
-    const result = await db.collection('users').insertOne({
+    // Create user
+    const user = await User.create({
       name,
       email,
       password: hashedPassword,
-      roles: [role], // Store roles as an array
-      isActive: true,
-      createdAt: new Date(),
-      lastLogin: null,
-      profile: {
-        company: role === 'recruiter' ? '' : null,
-        title: role === 'recruiter' ? '' : null,
-        bio: '',
-        skills: [],
-        education: [],
-        experience: [],
-      }
+      roles: role === 'recruiter' ? ['recruiter'] : ['jobseeker'],
     });
 
-    return res.status(201).json({
-      success: true,
-      message: 'User created successfully',
-      userId: result.insertedId,
-    });
+    // Remove password from response
+    const userWithoutPassword = {
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      roles: user.roles,
+    };
+
+    res.status(201).json(userWithoutPassword);
   } catch (error) {
     console.error('Signup error:', error);
-    return res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ error: 'Error creating user' });
   }
 } 
