@@ -1,19 +1,20 @@
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../auth/[...nextauth]';
-import { connectToDatabase } from '../../../lib/mongodb';
-import { ObjectId } from 'mongodb';
+import dbConnect from '../../../lib/mongodb';
+import User from '../../../models/User';
+import Job from '../../../models/Job';
+import Application from '../../../models/Application';
+import AdminLog from '../../../models/AdminLog';
 
 // Helper function to check if user is admin
 async function isAdmin(req) {
   const session = await getServerSession(req, authOptions);
   if (!session) return false;
-  
-  const { db } = await connectToDatabase();
-  const user = await db.collection('users').findOne({ 
-    _id: new ObjectId(session.user.id),
+  await dbConnect();
+  const user = await User.findOne({
+    _id: session.user.id,
     roles: { $in: ['admin', 'superadmin'] }
   });
-  
   return !!user;
 }
 
@@ -24,7 +25,7 @@ export default async function handler(req, res) {
     return res.status(403).json({ message: 'Unauthorized' });
   }
 
-  const { db } = await connectToDatabase();
+  await dbConnect();
   const { type, startDate, endDate } = req.query;
 
   if (!type || !['overview', 'users', 'jobs', 'applications'].includes(type)) {
@@ -36,29 +37,22 @@ export default async function handler(req, res) {
 
   try {
     let data = {};
-
     switch (type) {
-      case 'overview':
-        // Get total counts
+      case 'overview': {
         const [totalUsers, totalJobs, totalApplications] = await Promise.all([
-          db.collection('users').countDocuments(),
-          db.collection('jobs').countDocuments(),
-          db.collection('applications').countDocuments()
+          User.countDocuments(),
+          Job.countDocuments(),
+          Application.countDocuments()
         ]);
-
-        // Get active counts
         const [activeUsers, activeJobs] = await Promise.all([
-          db.collection('users').countDocuments({ isActive: true }),
-          db.collection('jobs').countDocuments({ status: 'active' })
+          User.countDocuments({ isActive: true }),
+          Job.countDocuments({ status: 'active' })
         ]);
-
-        // Get recent activity
-        const recentActivity = await db.collection('admin_logs')
-          .find({ timestamp: { $gte: start, $lte: end } })
+        const recentActivity = await AdminLog.find({
+          timestamp: { $gte: start, $lte: end }
+        })
           .sort({ timestamp: -1 })
-          .limit(10)
-          .toArray();
-
+          .limit(10);
         data = {
           totalUsers,
           activeUsers,
@@ -68,128 +62,102 @@ export default async function handler(req, res) {
           recentActivity
         };
         break;
-
-      case 'users':
+      }
+      case 'users': {
         // Get user registrations over time
-        const userRegistrations = await db.collection('users')
-          .aggregate([
-            {
-              $match: {
-                createdAt: { $gte: start, $lte: end }
-              }
-            },
-            {
-              $group: {
-                _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
-                count: { $sum: 1 }
-              }
-            },
-            {
-              $sort: { _id: 1 }
+        const userRegistrations = await User.aggregate([
+          {
+            $match: {
+              createdAt: { $gte: start, $lte: end }
             }
-          ])
-          .toArray();
-
+          },
+          {
+            $group: {
+              _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
+              count: { $sum: 1 }
+            }
+          },
+          { $sort: { _id: 1 } }
+        ]);
         // Get user roles distribution
-        const userRoles = await db.collection('users')
-          .aggregate([
-            {
-              $unwind: '$roles'
-            },
-            {
-              $group: {
-                _id: '$roles',
-                count: { $sum: 1 }
-              }
+        const userRoles = await User.aggregate([
+          { $unwind: '$roles' },
+          {
+            $group: {
+              _id: '$roles',
+              count: { $sum: 1 }
             }
-          ])
-          .toArray();
-
+          }
+        ]);
         data = {
           userRegistrations,
           userRoles
         };
         break;
-
-      case 'jobs':
+      }
+      case 'jobs': {
         // Get job postings over time
-        const jobPostings = await db.collection('jobs')
-          .aggregate([
-            {
-              $match: {
-                createdAt: { $gte: start, $lte: end }
-              }
-            },
-            {
-              $group: {
-                _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
-                count: { $sum: 1 }
-              }
-            },
-            {
-              $sort: { _id: 1 }
+        const jobPostings = await Job.aggregate([
+          {
+            $match: {
+              createdAt: { $gte: start, $lte: end }
             }
-          ])
-          .toArray();
-
+          },
+          {
+            $group: {
+              _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
+              count: { $sum: 1 }
+            }
+          },
+          { $sort: { _id: 1 } }
+        ]);
         // Get job status distribution
-        const jobStatus = await db.collection('jobs')
-          .aggregate([
-            {
-              $group: {
-                _id: '$status',
-                count: { $sum: 1 }
-              }
+        const jobStatus = await Job.aggregate([
+          {
+            $group: {
+              _id: '$status',
+              count: { $sum: 1 }
             }
-          ])
-          .toArray();
-
+          }
+        ]);
         data = {
           jobPostings,
           jobStatus
         };
         break;
-
-      case 'applications':
+      }
+      case 'applications': {
         // Get applications over time
-        const applications = await db.collection('applications')
-          .aggregate([
-            {
-              $match: {
-                createdAt: { $gte: start, $lte: end }
-              }
-            },
-            {
-              $group: {
-                _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
-                count: { $sum: 1 }
-              }
-            },
-            {
-              $sort: { _id: 1 }
+        const applications = await Application.aggregate([
+          {
+            $match: {
+              createdAt: { $gte: start, $lte: end }
             }
-          ])
-          .toArray();
-
+          },
+          {
+            $group: {
+              _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
+              count: { $sum: 1 }
+            }
+          },
+          { $sort: { _id: 1 } }
+        ]);
         // Get application status distribution
-        const applicationStatus = await db.collection('applications')
-          .aggregate([
-            {
-              $group: {
-                _id: '$status',
-                count: { $sum: 1 }
-              }
+        const applicationStatus = await Application.aggregate([
+          {
+            $group: {
+              _id: '$status',
+              count: { $sum: 1 }
             }
-          ])
-          .toArray();
-
+          }
+        ]);
         data = {
           applications,
           applicationStatus
         };
         break;
+      }
     }
-
     return res.status(200).json(data);
   } catch (error) {
     console.error('Analytics error:', error);
