@@ -1,5 +1,7 @@
 import { getSession } from 'next-auth/react';
-import { connectToDatabase } from '../../lib/mongodb';
+import dbConnect from '../../lib/mongodb';
+import Job from '../../models/Job';
+import User from '../../models/User';
 
 export default async function handler(req, res) {
   const session = await getSession({ req });
@@ -11,10 +13,10 @@ export default async function handler(req, res) {
   const { method } = req;
 
   try {
-    const { db } = await connectToDatabase();
+    await dbConnect();
 
     switch (method) {
-      case 'GET':
+      case 'GET': {
         const { search, type, location } = req.query;
         let query = { status: 'active' };
 
@@ -34,14 +36,10 @@ export default async function handler(req, res) {
           query.address = { $regex: location, $options: 'i' };
         }
 
-        const jobs = await db.collection('jobs')
-          .find(query)
-          .sort({ createdAt: -1 })
-          .toArray();
-
+        const jobs = await Job.find(query).sort({ createdAt: -1 });
         return res.status(200).json(jobs);
-
-      case 'POST':
+      }
+      case 'POST': {
         if (!session.user.roles.includes('recruiter')) {
           return res.status(403).json({ message: 'Forbidden: Only recruiters can post jobs.' });
         }
@@ -52,7 +50,7 @@ export default async function handler(req, res) {
           return res.status(400).json({ message: 'Missing required fields' });
         }
 
-        const job = {
+        const job = await Job.create({
           title,
           company,
           address,
@@ -65,15 +63,13 @@ export default async function handler(req, res) {
           recruiterId: session.user.id,
           createdAt: new Date(),
           updatedAt: new Date()
-        };
-
-        const result = await db.collection('jobs').insertOne(job);
+        });
 
         return res.status(201).json({
           message: 'Job posted successfully',
-          jobId: result.insertedId
+          jobId: job._id
         });
-
+      }
       default:
         res.setHeader('Allow', ['GET', 'POST']);
         return res.status(405).json({ message: `Method ${method} Not Allowed` });

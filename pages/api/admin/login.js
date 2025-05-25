@@ -1,4 +1,5 @@
-import { connectToDatabase } from '../../../lib/mongodb';
+import dbConnect from '../../../lib/mongodb';
+import Admin from '../../../models/Admin';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
@@ -6,9 +7,9 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ message: 'Method not allowed' });
 
   const { email, password } = req.body;
-  const { db } = await connectToDatabase();
+  await dbConnect();
 
-  const admin = await db.collection('admins').findOne({ email });
+  const admin = await Admin.findOne({ email });
   if (!admin) return res.status(401).json({ message: 'Invalid credentials' });
 
   const isMatch = await bcrypt.compare(password, admin.password);

@@ -41,7 +41,7 @@ export default function SignUp() {
         }
       }
     } catch (error) {
-      setError(error.response?.data?.message || 'An error occurred during sign up');
+      setError(error.response?.data?.error || 'An error occurred during sign up');
     }
   };
 
