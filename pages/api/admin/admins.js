@@ -1,6 +1,8 @@
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../auth/[...nextauth]';
-import { connectToDatabase } from '../../../lib/mongodb';
+import dbConnect from '../../../lib/mongodb';
+import User from '../../../models/User';
+import AdminLog from '../../../models/AdminLog';
 import { ObjectId } from 'mongodb';
 import bcrypt from 'bcryptjs';
 
@@ -8,13 +10,11 @@ import bcrypt from 'bcryptjs';
 async function isSuperAdmin(req) {
   const session = await getServerSession(req, authOptions);
   if (!session) return false;
-  
-  const { db } = await connectToDatabase();
-  const user = await db.collection('users').findOne({ 
-    _id: new ObjectId(session.user.id),
+  await dbConnect();
+  const user = await User.findOne({
+    _id: session.user.id,
     roles: 'superadmin'
   });
-  
   return !!user;
 }
 
@@ -25,47 +25,38 @@ export default async function handler(req, res) {
     return res.status(403).json({ message: 'Only superadmin can manage admin accounts' });
   }
 
-  const { db } = await connectToDatabase();
+  await dbConnect();
 
   switch (req.method) {
-    case 'GET':
+    case 'GET': {
       try {
-        const admins = await db.collection('users')
-          .find(
-            { roles: { $in: ['admin', 'superadmin'] } },
-            { password: 0 } // Exclude password
-          )
-          .sort({ createdAt: -1 })
-          .toArray();
-        
+        const admins = await User.find(
+          { roles: { $in: ['admin', 'superadmin'] } },
+          { password: 0 }
+        ).sort({ createdAt: -1 });
         return res.status(200).json(admins);
       } catch (error) {
         return res.status(500).json({ message: 'Error fetching admin accounts' });
       }
-
-    case 'POST':
+    }
+    case 'POST': {
       try {
-        const { email, password, name, role } = req.body;
-
+        const { email, password, name, role, adminId } = req.body;
         if (!email || !password || !name || !role) {
           return res.status(400).json({ message: 'All fields are required' });
         }
-
         if (!['admin', 'superadmin'].includes(role)) {
           return res.status(400).json({ message: 'Invalid role' });
         }
-
         // Check if email already exists
-        const existingUser = await db.collection('users').findOne({ email });
+        const existingUser = await User.findOne({ email });
         if (existingUser) {
           return res.status(400).json({ message: 'Email already registered' });
         }
-
         // Hash password
         const hashedPassword = await bcrypt.hash(password, 10);
-
         // Create admin account
-        const newAdmin = {
+        const newAdmin = await User.create({
           email,
           password: hashedPassword,
           name,
@@ -73,41 +64,34 @@ export default async function handler(req, res) {
           isActive: true,
           createdAt: new Date(),
           updatedAt: new Date()
-        };
-
-        const result = await db.collection('users').insertOne(newAdmin);
-
+        });
         // Log admin action
-        await db.collection('admin_logs').insertOne({
-          adminId: new ObjectId(req.body.adminId),
+        await AdminLog.create({
+          adminId,
           action: 'create admin',
-          targetUserId: result.insertedId,
+          targetUserId: newAdmin._id,
           details: { email, role },
           timestamp: new Date()
         });
-
         return res.status(201).json({
           message: 'Admin account created successfully',
-          id: result.insertedId
+          id: newAdmin._id
         });
       } catch (error) {
         return res.status(500).json({ message: 'Error creating admin account' });
       }
-
-    case 'PUT':
+    }
+    case 'PUT': {
       try {
-        const { adminId, action, role } = req.body;
-
+        const { adminId, action, role, targetAdminId } = req.body;
         // Prevent modifying superadmin accounts
-        const targetAdmin = await db.collection('users').findOne({
-          _id: new ObjectId(adminId),
+        const targetAdmin = await User.findOne({
+          _id: targetAdminId,
           roles: 'superadmin'
         });
-
         if (targetAdmin) {
           return res.status(403).json({ message: 'Cannot modify superadmin accounts' });
         }
-
         let update = {};
         switch (action) {
           case 'activate':
@@ -125,65 +109,53 @@ export default async function handler(req, res) {
           default:
             return res.status(400).json({ message: 'Invalid action' });
         }
-
-        const result = await db.collection('users').updateOne(
-          { _id: new ObjectId(adminId) },
+        const result = await User.updateOne(
+          { _id: targetAdminId },
           { $set: { ...update, updatedAt: new Date() } }
         );
-
         if (result.matchedCount === 0) {
           return res.status(404).json({ message: 'Admin account not found' });
         }
-
         // Log admin action
-        await db.collection('admin_logs').insertOne({
-          adminId: new ObjectId(req.body.adminId),
+        await AdminLog.create({
+          adminId,
           action: `${action} admin`,
-          targetUserId: new ObjectId(adminId),
+          targetUserId: targetAdminId,
           details: { action, role },
           timestamp: new Date()
         });
-
         return res.status(200).json({ message: 'Admin account updated successfully' });
       } catch (error) {
         return res.status(500).json({ message: 'Error updating admin account' });
       }
-
-    case 'DELETE':
+    }
+    case 'DELETE': {
       try {
-        const { adminId } = req.body;
-
+        const { adminId, targetAdminId } = req.body;
         // Prevent deleting superadmin accounts
-        const targetAdmin = await db.collection('users').findOne({
-          _id: new ObjectId(adminId),
+        const targetAdmin = await User.findOne({
+          _id: targetAdminId,
           roles: 'superadmin'
         });
-
         if (targetAdmin) {
           return res.status(403).json({ message: 'Cannot delete superadmin accounts' });
         }
-
-        const result = await db.collection('users').deleteOne({
-          _id: new ObjectId(adminId)
-        });
-
+        const result = await User.deleteOne({ _id: targetAdminId });
         if (result.deletedCount === 0) {
           return res.status(404).json({ message: 'Admin account not found' });
         }
-
         // Log admin action
-        await db.collection('admin_logs').insertOne({
-          adminId: new ObjectId(req.body.adminId),
+        await AdminLog.create({
+          adminId,
           action: 'delete admin',
-          targetUserId: new ObjectId(adminId),
+          targetUserId: targetAdminId,
           timestamp: new Date()
         });
-
         return res.status(200).json({ message: 'Admin account deleted successfully' });
       } catch (error) {
         return res.status(500).json({ message: 'Error deleting admin account' });
       }
-
+    }
     default:
       res.setHeader('Allow', ['GET', 'POST', 'PUT', 'DELETE']);
       res.status(405).end(`Method ${req.method} Not Allowed`);
