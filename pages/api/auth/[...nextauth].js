@@ -4,7 +4,7 @@ import bcrypt from 'bcryptjs';
 import dbConnect from '../../../lib/mongodb';
 import User from '../../../models/User';
 
-export default NextAuth({
+export const authOptions = {
   providers: [
     CredentialsProvider({
       name: 'Credentials',
@@ -13,9 +13,12 @@ export default NextAuth({
         password: { label: "Password", type: "password" }
       },
       async authorize(credentials) {
-        await dbConnect();
-        
+        if (!credentials?.email || !credentials?.password) {
+          throw new Error('Please enter an email and password');
+        }
+
         try {
+          await dbConnect();
           const user = await User.findOne({ email: credentials.email });
           
           if (!user) {
@@ -35,7 +38,8 @@ export default NextAuth({
             roles: user.roles,
           };
         } catch (error) {
-          throw new Error(error.message);
+          console.error('Auth error:', error);
+          throw new Error(error.message || 'Authentication failed');
         }
       }
     })
@@ -64,5 +68,8 @@ export default NextAuth({
     strategy: 'jwt',
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
+  debug: process.env.NODE_ENV === 'development',
   secret: process.env.NEXTAUTH_SECRET,
-}); 
+};
+
+export default NextAuth(authOptions); 
