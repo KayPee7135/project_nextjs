@@ -38,12 +38,8 @@ export default function Layout({ children }) {
     if (session?.user?.roles?.includes('recruiter')) {
       return (
         <>
-          <Link href="/jobs/new" className={`text-white hover:text-blue-300 px-3 py-2 rounded-md text-sm font-medium ${isActive('/jobs/new') ? 'bg-blue-700' : ''}`} onClick={e => { if (router.pathname === '/jobs/new') e.preventDefault(); }}>
-            Post Job
-          </Link>
-          <Link href="/jobs" className={`text-white hover:text-blue-300 px-3 py-2 rounded-md text-sm font-medium ${isActive('/jobs') ? 'bg-blue-700' : ''}`} onClick={e => { if (router.pathname === '/jobs') e.preventDefault(); }}>
-            My Jobs
-          </Link>
+          <Link href="/jobs/new" className={`text-white hover:text-blue-300 px-3 py-2 rounded-md text-sm font-medium ${isActive('/jobs/new') ? 'bg-blue-700' : ''}`}>Post Job</Link>
+          <Link href="/jobs" className={`text-white hover:text-blue-300 px-3 py-2 rounded-md text-sm font-medium ${isActive('/jobs') ? 'bg-blue-700' : ''}`}>My Jobs</Link>
         </>
       );
     }

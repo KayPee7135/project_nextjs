@@ -75,63 +75,61 @@ export default function JobsPage() {
 
   if (session?.user?.roles?.includes('recruiter')) {
     return (
-      <Layout>
-        <div className="max-w-5xl mx-auto py-8 px-4">
-          <div className="flex justify-between items-center mb-6">
-            <h1 className="text-3xl font-bold">My Posted Jobs</h1>
+      <div className="max-w-5xl mx-auto py-8 px-4">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold">My Posted Jobs</h1>
+          <button
+            onClick={() => router.push('/jobs/new')}
+            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          >
+            Post New Job
+          </button>
+        </div>
+        {loading ? (
+          <div>Loading your jobs...</div>
+        ) : jobs.length === 0 ? (
+          <div className="text-center py-8">
+            <p className="text-gray-600 mb-4">You haven&apos;t posted any jobs yet.</p>
             <button
               onClick={() => router.push('/jobs/new')}
-              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+              className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
             >
-              Post New Job
+              Post Your First Job
             </button>
           </div>
-          {loading ? (
-            <div>Loading your jobs...</div>
-          ) : jobs.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-gray-600 mb-4">You haven&apos;t posted any jobs yet.</p>
-              <button
-                onClick={() => router.push('/jobs/new')}
-                className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
-              >
-                Post Your First Job
-              </button>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {jobs.map(job => (
-                <div key={job._id} className="bg-white p-4 rounded shadow">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h2 className="text-xl font-semibold">{job.title}</h2>
-                      <div className="text-gray-600">{job.company} • {job.location}</div>
-                      <div className="text-gray-500 text-sm">{job.type}</div>
-                      <div className="text-gray-500 text-sm mt-2">
-                        Posted: {new Date(job.createdAt).toLocaleDateString()}
-                      </div>
-                    </div>
-                    <div className="flex space-x-2">
-                      <button
-                        onClick={() => handleEdit(job._id)}
-                        className="bg-gray-100 text-gray-700 px-3 py-1 rounded hover:bg-gray-200"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDelete(job._id)}
-                        className="bg-red-100 text-red-700 px-3 py-1 rounded hover:bg-red-200"
-                      >
-                        Delete
-                      </button>
+        ) : (
+          <div className="space-y-4">
+            {jobs.map(job => (
+              <div key={job._id} className="bg-white p-4 rounded shadow">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h2 className="text-xl font-semibold">{job.title}</h2>
+                    <div className="text-gray-600">{job.company} • {job.location}</div>
+                    <div className="text-gray-500 text-sm">{job.type}</div>
+                    <div className="text-gray-500 text-sm mt-2">
+                      Posted: {new Date(job.createdAt).toLocaleDateString()}
                     </div>
                   </div>
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={() => handleEdit(job._id)}
+                      className="bg-gray-100 text-gray-700 px-3 py-1 rounded hover:bg-gray-200"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleDelete(job._id)}
+                      className="bg-red-100 text-red-700 px-3 py-1 rounded hover:bg-red-200"
+                    >
+                      Delete
+                    </button>
+                  </div>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </Layout>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     );
   }
 

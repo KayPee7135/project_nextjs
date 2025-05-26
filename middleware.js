@@ -18,18 +18,18 @@ export async function middleware(req) {
   }
 
   // Role-based access control
-  const role = token.role;
+  const roles = token.roles || [];
 
-  // Jobseeker routes
+  // Jobseeker and Recruiter routes
   if (pathname.startsWith('/jobs') || pathname.startsWith('/applications') || pathname.startsWith('/profile')) {
-    if (role !== 'jobseeker') {
+    if (!roles.includes('jobseeker') && !roles.includes('recruiter')) {
       return NextResponse.redirect(new URL('/dashboard', req.url));
     }
   }
 
   // Recruiter routes
   if (pathname.startsWith('/post-job') || pathname.startsWith('/my-jobs') || pathname.startsWith('/applicants')) {
-    if (role !== 'recruiter') {
+    if (!roles.includes('recruiter')) {
       return NextResponse.redirect(new URL('/dashboard', req.url));
     }
   }

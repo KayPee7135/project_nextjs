@@ -75,9 +75,15 @@ export default function Home() {
             Join thousands of jobseekers and recruiters in one place. Whether you&apos;re looking for your next opportunity or searching for the perfect candidate, we&apos;ve got you covered.
           </p>
           <div className="flex gap-4">
-            <Link href="/listed-jobs" className="px-6 py-3 rounded-lg bg-white text-blue-600 font-semibold text-lg shadow hover:bg-blue-50 transition">
-              Find Jobs
-            </Link>
+            {status === 'authenticated' ? (
+              <Link href="/listed-jobs" className="px-6 py-3 rounded-lg bg-white text-blue-600 font-semibold text-lg shadow hover:bg-blue-50 transition">
+                Find Jobs
+              </Link>
+            ) : (
+              <Link href="/auth/signup?role=jobseeker" className="px-6 py-3 rounded-lg bg-white text-blue-600 font-semibold text-lg shadow hover:bg-blue-50 transition">
+                Find Jobs
+              </Link>
+            )}
             {status === 'authenticated' && session?.user?.roles?.includes('recruiter') ? (
               <Link
                 href="/jobs/new"

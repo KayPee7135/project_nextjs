@@ -1,15 +1,9 @@
-import { getSession } from 'next-auth/react';
+import { getToken } from 'next-auth/jwt';
 import dbConnect from '../../lib/mongodb';
 import Job from '../../models/Job';
 import User from '../../models/User';
 
 export default async function handler(req, res) {
-  const session = await getSession({ req });
-
-  if (!session) {
-    return res.status(401).json({ message: 'Unauthorized' });
-  }
-
   const { method } = req;
 
   try {
@@ -40,13 +34,17 @@ export default async function handler(req, res) {
         return res.status(200).json(jobs);
       }
       case 'POST': {
-        if (!session.user.roles.includes('recruiter')) {
+        const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+        if (!token) {
+          return res.status(401).json({ message: 'Unauthorized' });
+        }
+        if (!token.roles || !token.roles.includes('recruiter')) {
           return res.status(403).json({ message: 'Forbidden: Only recruiters can post jobs.' });
         }
 
-        const { title, company, address, jobType, description, email, category, date } = req.body;
+        const { title, company, address, type, description, email, category, date } = req.body;
 
-        if (!title || !company || !address || !jobType || !description || !email) {
+        if (!title || !company || !address || !type || !description || !email) {
           return res.status(400).json({ message: 'Missing required fields' });
         }
 
@@ -54,13 +52,13 @@ export default async function handler(req, res) {
           title,
           company,
           address,
-          type: jobType,
+          type,
           description,
           email,
           category,
           date,
-          status: 'pending',
-          recruiterId: session.user.id,
+          status: 'active',
+          recruiterId: token.id,
           createdAt: new Date(),
           updatedAt: new Date()
         });

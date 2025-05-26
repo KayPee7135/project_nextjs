@@ -21,6 +21,10 @@ export default function PostJob() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
 
+  // Debug logging
+  console.log('Session:', session);
+  console.log('Status:', status);
+
   useEffect(() => {
     if (status === 'loading') return;
     if (!session || !session.user.roles?.includes('recruiter')) {
@@ -53,6 +57,7 @@ export default function PostJob() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
+        credentials: 'include',
       });
       const data = await res.json();
       if (res.ok) {
@@ -72,7 +77,7 @@ export default function PostJob() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-200 to-purple-200 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-2xl w-full bg-white rounded-2xl shadow-lg p-8">
-        <h1 className="text-3xl font-bold text-center mb-8 text-gray-900 drop-shadow">Post a New Job</h1>
+        <h1 className="text-3xl font-bold text-center mb-8 text-black drop-shadow">Post a New Job</h1>
         <form className="space-y-4" onSubmit={handleSubmit}>
           <input
             name="title"
@@ -80,7 +85,7 @@ export default function PostJob() {
             value={form.title}
             onChange={handleChange}
             placeholder="Job Title"
-            className="w-full p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-purple-400"
+            className="w-full p-3 border border-black rounded focus:outline-none focus:ring-2 focus:ring-purple-400 text-black"
             required
           />
           <input
@@ -89,7 +94,7 @@ export default function PostJob() {
             value={form.company}
             onChange={handleChange}
             placeholder="Company Name"
-            className="w-full p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-purple-400"
+            className="w-full p-3 border border-black rounded focus:outline-none focus:ring-2 focus:ring-purple-400 text-black"
             required
           />
           <input
@@ -98,13 +103,13 @@ export default function PostJob() {
             value={form.address}
             onChange={handleChange}
             placeholder="Company Address"
-            className="w-full p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-purple-400"
+            className="w-full p-3 border border-black rounded focus:outline-none focus:ring-2 focus:ring-purple-400 text-black"
           />
           <select
             name="type"
             value={form.type}
             onChange={handleChange}
-            className="w-full p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-purple-400"
+            className="w-full p-3 border border-black rounded focus:outline-none focus:ring-2 focus:ring-purple-400 text-black"
             required
           >
             <option value="">Select Job Type</option>
@@ -118,7 +123,7 @@ export default function PostJob() {
             value={form.description}
             onChange={handleChange}
             placeholder="Brief Description about the Job"
-            className="w-full p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-purple-400"
+            className="w-full p-3 border border-black rounded focus:outline-none focus:ring-2 focus:ring-purple-400 text-black"
             rows={4}
             required
           />
@@ -128,14 +133,14 @@ export default function PostJob() {
             value={form.email}
             onChange={handleChange}
             placeholder="Contact Information (Email)"
-            className="w-full p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-purple-400"
+            className="w-full p-3 border border-black rounded focus:outline-none focus:ring-2 focus:ring-purple-400 text-black"
             required
           />
           <input
             name="file"
             type="file"
             onChange={handleChange}
-            className="w-full p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-purple-400"
+            className="w-full p-3 border border-black rounded focus:outline-none focus:ring-2 focus:ring-purple-400 text-black"
           />
           <input
             name="category"
@@ -143,14 +148,14 @@ export default function PostJob() {
             value={form.category}
             onChange={handleChange}
             placeholder="Category (e.g., IT, 3rd Year)"
-            className="w-full p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-purple-400"
+            className="w-full p-3 border border-black rounded focus:outline-none focus:ring-2 focus:ring-purple-400 text-black"
           />
           <input
             name="date"
             type="date"
             value={form.date}
             onChange={handleChange}
-            className="w-full p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-purple-400"
+            className="w-full p-3 border border-black rounded focus:outline-none focus:ring-2 focus:ring-purple-400 text-black"
             required
           />
           <input
@@ -159,7 +164,7 @@ export default function PostJob() {
             value={form.slots}
             onChange={handleChange}
             placeholder="Slots Available"
-            className="w-full p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-purple-400"
+            className="w-full p-3 border border-black rounded focus:outline-none focus:ring-2 focus:ring-purple-400 text-black"
             min={1}
             required
           />
@@ -169,7 +174,7 @@ export default function PostJob() {
           >
             {loading ? 'Posting...' : 'Post Job'}
           </button>
-          {message && <div className="text-center text-sm mt-2">{message}</div>}
+          {message && <div className="text-center text-sm mt-2 text-black">{message}</div>}
         </form>
       </div>
     </div>
